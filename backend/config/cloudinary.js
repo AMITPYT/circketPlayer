@@ -18,15 +18,21 @@ const storage = new CloudinaryStorage({
     params: {
         folder: 'cricket_players',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-        format: 'webp', // Convert to webp for better compression
+        format: 'webp',
         transformation: [
-            { width: 800, height: 800, crop: 'limit' }, // Limit max dimensions
-            { quality: 'auto:low' }, // Auto optimize quality for smaller size
+            { width: 800, height: 800, crop: 'limit' },
+            { quality: 'auto:low' },
             { fetch_format: 'auto' }
         ]
     }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({
+    storage: storage,
+    limits: {
+
+        fileSize: 100 * 1024 // STRICT LIMIT: 100KB. 
+    }
+});
 
 module.exports = { cloudinary, upload };

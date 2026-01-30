@@ -5,9 +5,12 @@ import PlayerDetail from './components/PlayerDetail';
 import AuctionView from './components/AuctionView';
 import './index.css';
 
+import { Toaster } from 'react-hot-toast';
+
 function App() {
   return (
     <Router>
+      <Toaster position="top-right" />
       <div className="app">
         <Routes>
           <Route path="/" element={<Navigate to="/players" replace />} />

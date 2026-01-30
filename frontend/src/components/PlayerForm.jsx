@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
+import qrCodeImage from '../assets/qecode.png';
 
 const API_URL = import.meta.env.VITE_API_URL
 const PlayerForm = () => {
@@ -37,6 +39,15 @@ const PlayerForm = () => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Frontend validation for file size (100KB)
+            if (file.size > 100 * 1024) {
+                toast.error('File size exceeds 100KB limit! Please upload a smaller image.');
+                e.target.value = null; // Reset input
+                setFormData(prev => ({ ...prev, profileImage: null }));
+                setImagePreview(null);
+                return;
+            }
+
             setFormData(prev => ({ ...prev, profileImage: file }));
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -66,6 +77,7 @@ const PlayerForm = () => {
             });
 
             setSuccess(true);
+            toast.success('Registration Successful!');
             setFormData({
                 name: '',
                 age: '',
@@ -77,7 +89,9 @@ const PlayerForm = () => {
             setImagePreview(null);
         } catch (error) {
             console.error('Error creating player:', error);
-            alert('Failed to create player. Please try again.');
+            // Check for specific backend error message if available
+            const message = error.response?.data?.error || error.response?.data?.message || 'Failed to create player. Please try again.';
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -94,6 +108,16 @@ const PlayerForm = () => {
                     <div className="success-icon">🎉</div>
                     <h1>Registration Successful!</h1>
                     <p>Your details have been added to the cricket team.</p>
+
+                    <div className="payment-section" style={{ margin: '20px 0', textAlign: 'center' }}>
+                        <p style={{ fontWeight: 'bold', marginBottom: '10px' }}>Scan for Payment</p>
+                        <img
+                            src={qrCodeImage}
+                            alt="Payment QR Code"
+                            style={{ width: '200px', height: '200px', objectFit: 'contain', border: '1px solid #ddd', borderRadius: '8px' }}
+                        />
+                    </div>
+
                     <button onClick={handleReset} className="submit-btn">Add Another Player</button>
                     <p className="note">Admin will review your details.</p>
                 </div>
