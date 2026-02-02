@@ -10,6 +10,7 @@ const PlayerForm = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
+        whatsappNo: '',
         age: '',
         role: '',
         battingStyle: '',
@@ -33,6 +34,16 @@ const PlayerForm = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+
+        // Restrict WhatsApp Number to digits only
+        if (name === 'whatsappNo') {
+            const numericValue = value.replace(/\D/g, ''); // Remove non-numeric characters
+            if (numericValue.length <= 10) {
+                setFormData(prev => ({ ...prev, [name]: numericValue }));
+            }
+            return;
+        }
+
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
@@ -64,6 +75,7 @@ const PlayerForm = () => {
         try {
             const data = new FormData();
             data.append('name', formData.name);
+            data.append('whatsappNo', formData.whatsappNo);
             data.append('age', formData.age);
             data.append('role', formData.role);
             data.append('battingStyle', formData.battingStyle);
@@ -80,6 +92,7 @@ const PlayerForm = () => {
             toast.success('Registration Successful!');
             setFormData({
                 name: '',
+                whatsappNo: '',
                 age: '',
                 role: '',
                 battingStyle: '',
@@ -139,6 +152,21 @@ const PlayerForm = () => {
                         value={formData.name}
                         onChange={handleChange}
                         placeholder="Enter your full name"
+                        required
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="whatsappNo">WhatsApp Number</label>
+                    <input
+                        type="tel"
+                        id="whatsappNo"
+                        name="whatsappNo"
+                        value={formData.whatsappNo}
+                        onChange={handleChange}
+                        placeholder="Enter your WhatsApp number"
+                        pattern="[0-9]{10}"
+                        title="Please enter a valid 10-digit number"
                         required
                     />
                 </div>

@@ -152,6 +152,10 @@ const PlayerDetail = () => {
                                 <span className="stat-label">Bowling Style</span>
                                 <span className="stat-value">{player.bowlingStyle}</span>
                             </div>
+                            <div className="stat-item">
+                                <span className="stat-label">WhatsApp Number</span>
+                                <span className="stat-value">{player.whatsappNo || 'Not provided'}</span>
+                            </div>
                         </div>
                     </div>
                 </div>

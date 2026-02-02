@@ -12,6 +12,16 @@ const playerSchema = new mongoose.Schema({
         min: [15, 'Age must be at least 15'],
         max: [50, 'Age cannot exceed 50']
     },
+    whatsappNo: {
+        type: Number,
+        required: [true, 'WhatsApp number is required'],
+        validate: {
+            validator: function (v) {
+                return /^\d{10}$/.test(v.toString());
+            },
+            message: props => `${props.value} is not a valid 10-digit WhatsApp number!`
+        }
+    },
     role: {
         type: String,
         required: [true, 'Player role is required'],

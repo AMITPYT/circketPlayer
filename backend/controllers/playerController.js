@@ -11,7 +11,8 @@ const createPlayer = async (req, res) => {
             age: req.body.age,
             role: req.body.role,
             battingStyle: req.body.battingStyle,
-            bowlingStyle: req.body.bowlingStyle
+            bowlingStyle: req.body.bowlingStyle,
+            whatsappNo: req.body.whatsappNo
         };
         const player = await playerService.createPlayer(playerData, req.file);
         res.status(201).json(player);
@@ -38,6 +39,15 @@ const getAllPlayerIds = async (req, res) => {
     }
 };
 
+const getFullPlayers = async (req, res) => {
+    try {
+        const players = await playerService.getAllPlayers();
+        res.json(players);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 const getPlayerById = async (req, res) => {
     try {
         const player = await playerService.getPlayerById(req.params.id);
@@ -57,7 +67,8 @@ const updatePlayer = async (req, res) => {
             age: req.body.age,
             role: req.body.role,
             battingStyle: req.body.battingStyle,
-            bowlingStyle: req.body.bowlingStyle
+            bowlingStyle: req.body.bowlingStyle,
+            whatsappNo: req.body.whatsappNo
         };
 
         // Filter out undefined fields
@@ -89,6 +100,7 @@ module.exports = {
     createPlayer,
     getPlayers,
     getAllPlayerIds,
+    getFullPlayers,
     getPlayerById,
     updatePlayer,
     deletePlayer

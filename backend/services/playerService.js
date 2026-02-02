@@ -38,6 +38,10 @@ class PlayerService {
         return await Player.find({}, '_id').sort({ createdAt: -1 });
     }
 
+    async getAllPlayers() {
+        return await Player.find({}).sort({ name: 1 });
+    }
+
     async getPlayerById(id) {
         const player = await Player.findById(id);
         if (!player) {

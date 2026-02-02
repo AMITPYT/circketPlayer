@@ -12,6 +12,9 @@ router.get('/', playerController.getPlayers);
 // Get all player IDs for navigation
 router.get('/all', playerController.getAllPlayerIds);
 
+// Get all players with full details for reports
+router.get('/full', playerController.getFullPlayers);
+
 // Get a single player by ID
 router.get('/:id', playerController.getPlayerById);
 

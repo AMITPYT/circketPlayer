@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import toast from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -83,11 +86,149 @@ const PlayerList = () => {
         }
     };
 
+    const downloadPDF = async () => {
+        const toastId = toast.loading('Generating individual profile pages...');
+        try {
+            const response = await axios.get(`${API_URL}/players/full`);
+            const allPlayers = response.data;
+
+            if (!allPlayers || allPlayers.length === 0) {
+                toast.error('No player data found to download.', { id: toastId });
+                return;
+            }
+
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const getBase64Image = (url) => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.setAttribute('crossOrigin', 'anonymous');
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                    };
+                    img.onerror = () => resolve(null);
+                    img.src = url;
+                });
+            };
+
+            for (let i = 0; i < allPlayers.length; i++) {
+                const player = allPlayers[i];
+                if (i > 0) doc.addPage();
+
+                // Design: Dark Header
+                doc.setFillColor(15, 23, 42); // bg-dark
+                doc.rect(0, 0, 210, 50, 'F');
+
+                // Accent Line
+                doc.setFillColor(99, 102, 241); // primary
+                doc.rect(0, 50, 210, 2, 'F');
+
+                // Header Text
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(24);
+                doc.setFont('helvetica', 'bold');
+                doc.text('PLAYER PROFILE', 105, 30, { align: 'center' });
+
+                // Profile Image Container (Adjusted: 70x70 centered frame, maintained aspect ratio)
+                if (player.profileImage) {
+                    const imgData = await getBase64Image(player.profileImage);
+                    if (imgData) {
+                        const frameSize = 70;
+                        const xPos = 105 - (frameSize / 2);
+                        const yPos = 65;
+
+                        // Main Frame
+                        doc.setDrawColor(99, 102, 241);
+                        doc.setLineWidth(0.5);
+                        doc.roundedRect(xPos, yPos, frameSize, frameSize, 2, 2, 'D');
+
+                        // Background for image area
+                        doc.setFillColor(248, 250, 252);
+                        doc.rect(xPos + 1, yPos + 1, frameSize - 2, frameSize - 2, 'F');
+
+                        try {
+                            // jspdf addImage can handle aspect ratio via 'prop' aliasing or manual calculation
+                            // Here we use a centered approach within the frame
+                            doc.addImage(imgData, 'JPEG', xPos + 2, yPos + 2, frameSize - 4, frameSize - 4, undefined, 'FAST');
+                        } catch (e) {
+                            console.error('Error adding image', e);
+                        }
+                    }
+                }
+
+                // Player Name
+                doc.setTextColor(15, 23, 42);
+                doc.setFontSize(36);
+                doc.setFont('helvetica', 'bold');
+                doc.text(player.name.toUpperCase(), 105, 165, { align: 'center' });
+
+                // Role Badge
+                const roleWidth = doc.getTextWidth(player.role) + 20;
+                doc.setFillColor(99, 102, 241);
+                doc.roundedRect((210 - roleWidth) / 2, 172, roleWidth, 12, 6, 6, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(14);
+                doc.text(player.role, 105, 180, { align: 'center' });
+
+                // Stats Section
+                const startX = 40;
+                const startY = 210;
+                const stats = [
+                    { label: 'AGE', value: player.age + ' Years' },
+                    { label: 'WHATSAPP', value: player.whatsappNo || 'N/A' },
+                    { label: 'BATTING', value: player.battingStyle },
+                    { label: 'BOWLING', value: player.bowlingStyle }
+                ];
+
+                stats.forEach((stat, idx) => {
+                    const y = startY + (idx * 18);
+                    doc.setTextColor(100, 116, 139);
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(stat.label, startX, y);
+
+                    doc.setTextColor(15, 23, 42);
+                    doc.setFontSize(16);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(stat.value, startX, y + 8);
+
+                    // Underline
+                    doc.setDrawColor(241, 245, 249);
+                    doc.line(startX, y + 11, 170, y + 11);
+                });
+
+                // Footer
+                doc.setFontSize(9);
+                doc.setTextColor(148, 163, 184);
+                doc.text('Cricket Team Management System', 14, 285);
+                doc.text(`Page ${i + 1} of ${allPlayers.length}`, 196, 285, { align: 'right' });
+            }
+
+            doc.save(`Cricket_Team_Players_${new Date().getTime()}.pdf`);
+            toast.success('Professional Catalog Downloaded!', { id: toastId });
+        } catch (error) {
+            console.error('PDF Generation Error:', error);
+            toast.error('Failed to generate professional PDF.', { id: toastId });
+        }
+    };
+
     return (
         <div className="list-container">
             <div className="list-header">
                 <h1>Player List</h1>
                 <div className="header-actions">
+                    <button onClick={downloadPDF} className="download-btn">
+                        📄 Download Report
+                    </button>
                     <button onClick={() => navigate('/auction')} className="auction-btn">
                         🏏 Start Auction
                     </button>
