@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import toast from 'react-hot-toast';
 
@@ -87,7 +87,7 @@ const PlayerList = () => {
     };
 
     const downloadPDF = async () => {
-        const toastId = toast.loading('Generating individual profile pages...');
+        const toastId = toast.loading('Connecting to server...');
         try {
             const response = await axios.get(`${API_URL}/players/full`);
             const allPlayers = response.data;
@@ -97,31 +97,51 @@ const PlayerList = () => {
                 return;
             }
 
-            const doc = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4'
-            });
+            toast.loading(`Gathering ${allPlayers.length} player profiles...`, { id: toastId });
 
             const getBase64Image = (url) => {
                 return new Promise((resolve) => {
                     const img = new Image();
                     img.setAttribute('crossOrigin', 'anonymous');
                     img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0);
-                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                        try {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0);
+                            resolve(canvas.toDataURL('image/jpeg', 0.8));
+                        } catch (e) {
+                            console.error('Canvas processing error:', e);
+                            resolve(null);
+                        }
                     };
                     img.onerror = () => resolve(null);
-                    img.src = url;
+                    // Add timestamp to avoid CORS issues with cached images without CORS headers
+                    const urlWithTimestamp = url.includes('?') ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`;
+                    img.src = urlWithTimestamp;
                 });
             };
 
+            // Fetch all images in parallel for better performance
+            const imagePromises = allPlayers.map(player =>
+                player.profileImage ? getBase64Image(player.profileImage) : Promise.resolve(null)
+            );
+
+            const playerImages = await Promise.all(imagePromises);
+
+            toast.loading('Generating professional PDF catalog...', { id: toastId });
+
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
             for (let i = 0; i < allPlayers.length; i++) {
                 const player = allPlayers[i];
+                const imgData = playerImages[i];
+
                 if (i > 0) doc.addPage();
 
                 // Design: Dark Header
@@ -138,32 +158,29 @@ const PlayerList = () => {
                 doc.setFont('helvetica', 'bold');
                 doc.text('PLAYER PROFILE', 105, 30, { align: 'center' });
 
-                // Profile Image Container (Adjusted: 70x70 centered frame, maintained aspect ratio)
-                if (player.profileImage) {
-                    const imgData = await getBase64Image(player.profileImage);
-                    if (imgData) {
-                        const frameSize = 70;
-                        const xPos = 105 - (frameSize / 2);
-                        const yPos = 65;
+                // Profile Image Container
+                if (imgData) {
+                    const frameSize = 70;
+                    const xPos = 105 - (frameSize / 2);
+                    const yPos = 65;
 
-                        // Main Frame
-                        doc.setDrawColor(99, 102, 241);
-                        doc.setLineWidth(0.5);
-                        doc.roundedRect(xPos, yPos, frameSize, frameSize, 2, 2, 'D');
+                    // Main Frame
+                    doc.setDrawColor(99, 102, 241);
+                    doc.setLineWidth(0.5);
+                    doc.roundedRect(xPos, yPos, frameSize, frameSize, 2, 2, 'D');
 
-                        // Background for image area
-                        doc.setFillColor(248, 250, 252);
-                        doc.rect(xPos + 1, yPos + 1, frameSize - 2, frameSize - 2, 'F');
+                    // Background for image area
+                    doc.setFillColor(248, 250, 252);
+                    doc.rect(xPos + 1, yPos + 1, frameSize - 2, frameSize - 2, 'F');
 
-                        try {
-                            // jspdf addImage can handle aspect ratio via 'prop' aliasing or manual calculation
-                            // Here we use a centered approach within the frame
-                            doc.addImage(imgData, 'JPEG', xPos + 2, yPos + 2, frameSize - 4, frameSize - 4, undefined, 'FAST');
-                        } catch (e) {
-                            console.error('Error adding image', e);
-                        }
+                    try {
+                        doc.addImage(imgData, 'JPEG', xPos + 2, yPos + 2, frameSize - 4, frameSize - 4, undefined, 'FAST');
+                    } catch (e) {
+                        console.error('Error adding image to PDF', e);
                     }
                 }
+
+
 
                 // Player Name
                 doc.setTextColor(15, 23, 42);
@@ -183,10 +200,10 @@ const PlayerList = () => {
                 const startX = 40;
                 const startY = 210;
                 const stats = [
-                    { label: 'AGE', value: player.age + ' Years' },
-                    { label: 'WHATSAPP', value: player.whatsappNo || 'N/A' },
-                    { label: 'BATTING', value: player.battingStyle },
-                    { label: 'BOWLING', value: player.bowlingStyle }
+                    { label: 'AGE', value: String(player.age) + ' Years' },
+                    { label: 'WHATSAPP', value: player.whatsappNo ? String(player.whatsappNo) : 'N/A' },
+                    { label: 'BATTING', value: String(player.battingStyle) },
+                    { label: 'BOWLING', value: String(player.bowlingStyle) }
                 ];
 
                 stats.forEach((stat, idx) => {
