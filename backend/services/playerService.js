@@ -12,7 +12,7 @@ class PlayerService {
     }
 
     async getPlayers(query) {
-        const { role, battingStyle, bowlingStyle, page = 1, limit = 12 } = query;
+        const { role, battingStyle, bowlingStyle, page = 1, limit = 24 } = query;
         const filter = {};
 
         if (role) filter.role = role;

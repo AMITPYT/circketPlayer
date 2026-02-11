@@ -6,62 +6,41 @@ const API_URL = import.meta.env.VITE_API_URL
 
 const AuctionView = () => {
     const navigate = useNavigate();
-    const [playerIds, setPlayerIds] = useState([]);
-    const [currentPlayer, setCurrentPlayer] = useState(null);
+    const [players, setPlayers] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
 
-    // Fetch all IDs on mount
+    // Fetch all players on mount
     useEffect(() => {
-        fetchPlayerIds();
+        fetchPlayers();
     }, []);
 
-    // Fetch single player details when index changes
-    useEffect(() => {
-        if (playerIds.length > 0) {
-            fetchPlayerDetails(playerIds[currentIndex]);
-        }
-    }, [currentIndex, playerIds]);
-
-    const fetchPlayerIds = async () => {
-        try {
-            const response = await axios.get(`${API_URL}/players/all`);
-            const ids = response.data.map(p => p._id);
-            setPlayerIds(ids);
-            if (ids.length > 0) {
-                fetchPlayerDetails(ids[0]);
-            } else {
-                setLoading(false);
-            }
-        } catch (error) {
-            console.error('Error fetching player IDs:', error);
-            setLoading(false);
-        }
-    };
-
-    const fetchPlayerDetails = async (id) => {
+    const fetchPlayers = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`${API_URL}/players/${id}`);
-            setCurrentPlayer(response.data);
+            // Using the /full endpoint which returns all players
+            const response = await axios.get(`${API_URL}/players/full`);
+            setPlayers(response.data);
         } catch (error) {
-            console.error('Error fetching player details:', error);
+            console.error('Error fetching players:', error);
         } finally {
             setLoading(false);
         }
     };
 
+    const currentPlayer = players[currentIndex];
+
     const goToNext = useCallback(() => {
-        if (playerIds.length > 0) {
-            setCurrentIndex(prev => (prev + 1) % playerIds.length);
+        if (players.length > 0) {
+            setCurrentIndex(prev => (prev + 1) % players.length);
         }
-    }, [playerIds.length]);
+    }, [players.length]);
 
     const goToPrevious = useCallback(() => {
-        if (playerIds.length > 0) {
-            setCurrentIndex(prev => (prev - 1 + playerIds.length) % playerIds.length);
+        if (players.length > 0) {
+            setCurrentIndex(prev => (prev - 1 + players.length) % players.length);
         }
-    }, [playerIds.length]);
+    }, [players.length]);
 
     // Keyboard navigation
     useEffect(() => {
@@ -88,7 +67,7 @@ const AuctionView = () => {
         );
     }
 
-    if (playerIds.length === 0 && !loading) {
+    if (players.length === 0 && !loading) {
         return (
             <div className="auction-empty">
                 <h2>No Players Available</h2>
@@ -107,7 +86,7 @@ const AuctionView = () => {
                     ← Back to List
                 </button>
                 <div className="player-counter">
-                    Player {currentIndex + 1} of {playerIds.length}
+                    Player {currentIndex + 1} of {players.length}
                 </div>
                 <div className="keyboard-hint">
                     Use ←→ or ↑↓ arrow keys to navigate
@@ -166,11 +145,11 @@ const AuctionView = () => {
                 <div className="progress-bar">
                     <div
                         className="progress-fill"
-                        style={{ width: `${((currentIndex + 1) / playerIds.length) * 100}%` }}
+                        style={{ width: `${((currentIndex + 1) / players.length) * 100}%` }}
                     ></div>
                 </div>
                 <div className="progress-dots">
-                    {playerIds.map((_, index) => (
+                    {players.map((_, index) => (
                         <button
                             key={index}
                             className={`progress-dot ${index === currentIndex ? 'active' : ''}`}

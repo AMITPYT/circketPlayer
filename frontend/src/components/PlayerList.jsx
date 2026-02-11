@@ -47,7 +47,7 @@ const PlayerList = () => {
         try {
             const params = new URLSearchParams();
             params.append('page', page);
-            params.append('limit', 12);
+            params.append('limit', 24);
             if (filters.role) params.append('role', filters.role);
             if (filters.battingStyle) params.append('battingStyle', filters.battingStyle);
             if (filters.bowlingStyle) params.append('bowlingStyle', filters.bowlingStyle);

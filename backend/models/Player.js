@@ -59,4 +59,11 @@ const playerSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// Add indices for performance
+playerSchema.index({ role: 1 });
+playerSchema.index({ battingStyle: 1 });
+playerSchema.index({ bowlingStyle: 1 });
+playerSchema.index({ createdAt: -1 });
+playerSchema.index({ name: 1 });
+
 module.exports = mongoose.model('Player', playerSchema);

@@ -7,46 +7,29 @@ const API_URL = import.meta.env.VITE_API_URL
 const PlayerDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [player, setPlayer] = useState(null);
-    const [playerIds, setPlayerIds] = useState([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const [players, setPlayers] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Fetch all player IDs once for navigation
+    // Fetch all players once for navigation and details
     useEffect(() => {
-        const fetchPlayerIds = async () => {
-            try {
-                const response = await axios.get(`${API_URL}/players/all`);
-                // Check if response is array of objects or just IDs
-                const ids = response.data.map(p => p._id);
-                setPlayerIds(ids);
-                const index = ids.findIndex(pid => pid === id);
-                if (index !== -1) setCurrentIndex(index);
-            } catch (error) {
-                console.error('Error fetching player IDs:', error);
-            }
-        };
-        fetchPlayerIds();
-    }, []);
-
-    // Fetch single player data
-    useEffect(() => {
-        const fetchPlayer = async () => {
+        const fetchAllPlayers = async () => {
             setLoading(true);
             try {
-                const response = await axios.get(`${API_URL}/players/${id}`);
-                setPlayer(response.data);
-                // Update current index when ID changes
-                const index = playerIds.findIndex(pid => pid === id);
-                if (index !== -1) setCurrentIndex(index);
+                // Fetch all players with full details
+                const response = await axios.get(`${API_URL}/players/full`);
+                setPlayers(response.data);
             } catch (error) {
-                console.error('Error fetching player:', error);
+                console.error('Error fetching all players:', error);
             } finally {
                 setLoading(false);
             }
         };
-        if (id) fetchPlayer();
-    }, [id, playerIds]);
+        fetchAllPlayers();
+    }, []);
+
+    const player = players.find(p => p._id === id);
+    const currentIndex = players.findIndex(p => p._id === id);
+    const playerIds = players.map(p => p._id);
 
     const goToNext = useCallback(() => {
         if (playerIds.length > 0 && currentIndex < playerIds.length - 1) {
